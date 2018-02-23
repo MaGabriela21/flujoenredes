@@ -49,7 +49,7 @@ class Grafo:
             for j in range(i + 1, n):
                 if random() < prob:
                     self.conecta(str(i),str(j))
-    def gnuplot(self, color = True, tamano = True, name = "grafo_a"):
+    def gnuplot(self, gcolor = True, gtamano = True, name = "grafo_a"):
         n = len(self.nodos)
         with open("nodos.dat",'w') as archivo_nodos:
             for i in range(n):
@@ -77,7 +77,20 @@ class Grafo:
                         print("set arrow", arrow_idx, "from", x1, "," ,y1," to ", x2, ",", y2, "nohead", file = archivo)
                         arrow_idx += 1
             print("set style fill solid", file = archivo)
-            print("plot 'nodos.dat' using 1:2:(sqrt($3)/30):4 with circles palette notitle", file = archivo)
+            if gcolor and gtamano:
+                print("color y tamaño!!")
+                print("plot 'nodos.dat' using 1:2:(sqrt($3)/30):4 with circles palette notitle", file = archivo)
+            elif gcolor:
+                print("sin tamaño!!")
+                print("plot 'nodos.dat' using 1:2:3 with points pt 7 palette notitle", file = archivo)
+            elif gtamano:
+                print("sin color!!")
+                print("plot 'nodos.dat' using 1:2:(sqrt($3)/30) with circles notitle", file = archivo)
+            else:
+                print("sin color sin tamaño!!")
+                print("plot 'nodos.dat' using 1:2 with points pt 7 lc rgb 'blue' notitle", file = archivo)
+                
+                
 
                         
                     
