@@ -91,11 +91,11 @@ class Grafo:
                 color = self.color[nodo]
                 print(x, y,size,color, file = archivo_nodos)
         filename = name + ".plt"
-        imagename = " '"+ name + ".png' "
+        imagename = " '"+ name + ".tex' "
         arrow_idx = 1
         archivo_nodos.close()
         with open(filename, 'w') as archivo:
-            print("set term png", file = archivo)
+            print("set term epslatex", file = archivo)
             print("set output"+imagename, file = archivo)
             print("set pointsize 2", file = archivo)
             print("unset arrow", file = archivo)
