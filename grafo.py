@@ -1,4 +1,5 @@
 from math import sqrt
+import time
 
 class Nodo:
     def __init__(self, tamaño = 1, posicion = (0,0), color = 0):
@@ -28,7 +29,6 @@ class Grafo:
             self.agrega(v)
         if not u in self.nodos:
             self.agrega(u)
-        self.vecinos[v].add(u)
         self.vecinos[u].add(v)
         if peso == 0:
             (x1, y1) = self.posicion[v]
@@ -37,7 +37,8 @@ class Grafo:
         if dirigido:
             self.aristas[(u, v)] = (peso, tipo, dirigido) # en solo un sentido
         else:
-            self.aristas[(v, u)] = self.aristas[(u, v)] = (peso, tipo, dirigido)  # en ambos sentid
+            self.aristas[(v, u)] = self.aristas[(u, v)] = (peso, tipo, dirigido)  # en ambos sentidos
+            self.vecinos[v].add(u)
         
     def complemento(self):
         comp= Grafo()
@@ -46,7 +47,7 @@ class Grafo:
                 if v != w and (v, w) not in self.aristas:
                     comp.conecta(v, w, 1)
         return comp
-    def aleatorio(self, n=10, prob = 0.5, dirigido = False, rand_style_aristas = False):
+    def aleatorio(self, n=10, prob = 0.5, dirigido = False, rand_peso = False, rand_style_aristas = False):
         from random import random
         for i in range(n):
             tag_nodo = str(i)
@@ -58,12 +59,14 @@ class Grafo:
         for i in range(n - 1):
             for j in range(i + 1, n):
                 if random() < prob:
+                    if rand_peso:
+                        peso = int(10*random()+1)
+                    else:
+                        peso = 1
                     if rand_style_aristas:
                         atipo = int(10*random()) % 5
-                        peso = 3*random()
                     else:
                         atipo = 1
-                        peso = 1
                     self.conecta(str(i),str(j),peso, dirigido,atipo)
     def leer(self, filename = "2DU80-05-2.dat"):
         with open(filename, 'r') as archivo:
@@ -88,13 +91,14 @@ class Grafo:
         archivo.close()
 
     def Floyd_Warshal(self):
+        start_FW = time.time()
         d = dict() #diccionario de distancias
         for n in self.nodos:
             d[(n,n)] = 0
             for v in self.vecinos[n]:
                 (p,vv,t) = self.aristas[(n,v)]
                 d[(n,v)] = p
-                print(n,v,p)
+                #print(n,v,p)
         for intermedio in self.nodos:
             for desde in self.nodos:
                 for hasta in self.nodos:
@@ -108,10 +112,57 @@ class Grafo:
                         c = di + ih
                         if (desde, hasta) not in d or c < d[(desde, hasta)]:
                             d[(desde, hasta)] = c
-        return d
+        #print('time Floyd Warshal', time.time()-start_FW)
+        elapsed_FW = time.time()-start_FW
+        return d, elapsed_FW
+    def camino(self,s,t,ff):
+        cola = [s]
+        usados = set()
+        camino = dict()
+        while len(cola)>0:
+            u = cola.pop(0)
+            usados.add(u)
+            for (w,v) in self.aristas:
+                if w == u and v not in cola and v not in usados:
+                    actual = ff.get((u,v), 0)
+                    peso, d, f = self.aristas[(u,v)]
+                    dif = peso - actual
+                    if  dif > 0:
+                        cola.append(v)
+                        camino[v] = (u,dif)
+        if t in usados:
+            return camino
+        else: #no se alcanzó
+            return None
+        
+    def Ford_Fulkerson(self,s,t):
+        start_FF = time.time()
+        if s == t:
+            return 0
+        maximo = 0
+        f = dict()
+        while True:
+            aum = self.camino(s,t,f)
+            if aum is None:
+                break #ya no hay
+            incr = min(aum.values(), key = (lambda k: k[1]))[1]
+            u = t
+            while u in aum:
+                v = aum[u][0]
+                actual = f.get((u,v), 0) #cero si no hay
+                inverso = f.get((v,u), 0)
+                f[(v,u)] = actual + incr
+                f[(u,v)] = inverso - incr
+                u = v
+            maximo += incr
+            print('maximo hasta ahora:',maximo)
+            print('camino',aum)
+            print('f',f)
+        print('time Ford Fulkerson: ', time.time()-start_FF)
+        return maximo
 
                 
-    def gnuplot(self,name = "grafo.png",term = "png", gcolor = True, gtamano = True):
+    def gnuplot(self,name = "grafo.png",term = "png", gcolor = False, gtamano = False):
         n = len(self.nodos)
         with open("nodos.dat",'w') as archivo_nodos:
             for nodo in self.nodos:
@@ -149,6 +200,7 @@ class Grafo:
                 print("set label '" + str(ii) + "' at ",x1+ 0.05,"," ,y1+0.05, " left offset char -0.4,0", file = archivo) # https://stackoverflow.com/questions/23690551/how-do-you-assign-a-label-when-using-set-object-circle-in-gnuplot
                 print("set label '" + str(jj) + "' at " ,x2+0.05, "," ,y2+0.05, " left offset char -0.4,0", file = archivo)
                 (apeso, atipo, adirected) = self.aristas[(ii,jj)]
+                apeso = apeso/10
                 head = "nohead"
                 if adirected:
                     head = "head"
@@ -164,16 +216,16 @@ class Grafo:
             print("set style fill solid", file = archivo)
             print("set palette defined (0 'blue', 3 'green', 6 'yellow', 10 'red') ", file = archivo)
             if gcolor and gtamano:
-                print("color y tamaño!!")
+                #print("color y tamaño!!")
                 print("plot 'nodos.dat' using 1:2:(sqrt($3)/30):4 with circles palette notitle", file = archivo)
             elif gcolor:
-                print("sin tamaño!!")
+                #print("sin tamaño!!")
                 print("plot 'nodos.dat' using 1:2:3 with points pt 7 palette notitle", file = archivo)
             elif gtamano:
-                print("sin color!!")
+                #print("sin color!!")
                 print("plot 'nodos.dat' using 1:2:(sqrt($3)/30) with circles notitle", file = archivo)
             else:
-                print("sin color sin tamaño!!")
+                #print("sin color sin tamaño!!")
                 print("plot 'nodos.dat' using 1:2 with points pt 7 lc rgb 'blue' notitle", file = archivo)
                 
             archivo.close()
