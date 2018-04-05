@@ -57,7 +57,11 @@ class Grafo:
             color = random()
             self.agrega(tag_nodo, size, (x,y),color)
         for i in range(n - 1):
-            for j in range(i + 1, n):
+            if dirigido:
+                inicio = 1
+            else:
+                inicio = i+1
+            for j in range(inicio, n):
                 if random() < prob:
                     if rand_peso:
                         peso = int(10*random()+1)
@@ -91,7 +95,8 @@ class Grafo:
         archivo.close()
 
     def Floyd_Warshal(self):
-        start_FW = time.time()
+        #start_FW = time.time()
+        start_FW = time.perf_counter()
         d = dict() #diccionario de distancias
         for n in self.nodos:
             d[(n,n)] = 0
@@ -113,7 +118,8 @@ class Grafo:
                         if (desde, hasta) not in d or c < d[(desde, hasta)]:
                             d[(desde, hasta)] = c
         #print('time Floyd Warshal', time.time()-start_FW)
-        elapsed_FW = time.time()-start_FW
+        #elapsed_FW = time.time()-start_FW
+        elapsed_FW = time.perf_counter()-start_FW
         return d, elapsed_FW
     def camino(self,s,t,ff):
         cola = [s]
@@ -125,7 +131,9 @@ class Grafo:
             for (w,v) in self.aristas:
                 if w == u and v not in cola and v not in usados:
                     actual = ff.get((u,v), 0)
+                    #print("actual: ",actual)
                     peso, d, f = self.aristas[(u,v)]
+                    #print("peso: ", peso)
                     dif = peso - actual
                     if  dif > 0:
                         cola.append(v)
@@ -136,29 +144,34 @@ class Grafo:
             return None
         
     def Ford_Fulkerson(self,s,t):
-        start_FF = time.time()
+        start_FF = time.perf_counter()
         if s == t:
+            
             return 0
         maximo = 0
         f = dict()
         while True:
             aum = self.camino(s,t,f)
             if aum is None:
+                #print("No hay camino")
                 break #ya no hay
             incr = min(aum.values(), key = (lambda k: k[1]))[1]
+            #print("incremento!: ",incr)
             u = t
             while u in aum:
                 v = aum[u][0]
-                actual = f.get((u,v), 0) #cero si no hay
-                inverso = f.get((v,u), 0)
+                #print("u,v:", u,v)
+                actual = f.get((v,u), 0) #cero si no hay
+                inverso = f.get((u,v), 0)
+                #print("actual, incr", actual, incr)
                 f[(v,u)] = actual + incr
                 f[(u,v)] = inverso - incr
                 u = v
             maximo += incr
-            print('maximo hasta ahora:',maximo)
-            print('camino',aum)
-            print('f',f)
-        print('time Ford Fulkerson: ', time.time()-start_FF)
+            #print('maximo hasta ahora:',maximo)
+            #print('camino',aum)
+            #print('f',f)
+        print('time Ford Fulkerson: ', time.perf_counter()-start_FF)
         return maximo
 
                 
@@ -179,10 +192,12 @@ class Grafo:
         min_x = 0
         max_y = 1
         min_y = 1
+        axis_border = 0.05
+        edge_weight = 0.5
         with open(filename, 'w') as archivo:
             print("set term "+term, file = archivo)
             print("set output '"+name+"'", file = archivo)
-            print("set pointsize 2", file = archivo)
+            print("set pointsize 1", file = archivo)
             print("unset label", file = archivo)
             print("unset arrow", file = archivo)
             print("unset colorbox", file = archivo)
@@ -197,14 +212,14 @@ class Grafo:
                 if x2>max_x: max_x = x2
                 if y1>max_y: max_y = y1
                 if y2>max_y: max_y = y2
-                print("set label '" + str(ii) + "' at ",x1+ 0.05,"," ,y1+0.05, " left offset char -0.4,0", file = archivo) # https://stackoverflow.com/questions/23690551/how-do-you-assign-a-label-when-using-set-object-circle-in-gnuplot
-                print("set label '" + str(jj) + "' at " ,x2+0.05, "," ,y2+0.05, " left offset char -0.4,0", file = archivo)
+                print("set label '" + str(ii) + "' at ",x1+ axis_border,"," ,y1+0.05, " left offset char -0.4,0", file = archivo) # https://stackoverflow.com/questions/23690551/how-do-you-assign-a-label-when-using-set-object-circle-in-gnuplot
+                print("set label '" + str(jj) + "' at " ,x2+axis_border, "," ,y2+0.05, " left offset char -0.4,0", file = archivo)
                 (apeso, atipo, adirected) = self.aristas[(ii,jj)]
-                apeso = apeso/10
+                apeso = apeso*edge_weight
                 head = "nohead"
                 if adirected:
                     head = "head"
-                print("set arrow", arrow_idx, "from", x1, "," ,y1," to ", x2, ",", y2, head, " lw ",apeso, " dashtype ", atipo, file = archivo)
+                print("set arrow", arrow_idx, "from", x1, "," ,y1," to ", x2, ",", y2, head, "filled lw ",apeso, " dashtype ", atipo, file = archivo)
                 arrow_idx += 1
             #print("set style fill transparent solid 0.7", file = archivo)
             min_x = min_x - (max_x-min_x)/10
