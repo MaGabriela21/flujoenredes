@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, factorial, cos, sin, pi
 import time
 
 class Nodo:
@@ -62,7 +62,7 @@ class Grafo:
             else:
                 inicio = i+1
             for j in range(inicio, n):
-                if random() < prob:
+                if random() < prob and i!=j:
                     if rand_peso:
                         peso = int(10*random()+1)
                     else:
@@ -72,6 +72,55 @@ class Grafo:
                     else:
                         atipo = 1
                     self.conecta(str(i),str(j),peso, dirigido,atipo)
+    def circ_aleatorio(self, n=10, prob = 0.5,x0 =0.5, y0 = 0.5, dirigido = False, rand_peso = False, rand_style_aristas = True):
+        from random import random
+        for i in range(n):
+            tag_nodo = str(i)
+            x = x0 + 0.5*cos(2*pi*i/n)
+            y = y0 + 0.5*sin(2*pi*i/n)
+            size = random()
+            color = random()
+            self.agrega(tag_nodo, size, (x,y),color)
+        for i in range(n - 1):
+            if dirigido:
+                inicio = 1
+            else:
+                inicio = i+1
+            for j in range(inicio, n):
+                if random() < prob and i!=j:
+                    if rand_peso:
+                        peso = int(10*random()+1)
+                    else:
+                        peso = 1
+                    if rand_style_aristas:
+                        atipo = int(10*random()) % 5
+                    else:
+                        atipo = 1
+                    self.conecta(str(i),str(j),peso, dirigido,atipo)
+    def kcirc_aleatorio(self, n=10, k = 3,prob = 0.5,x0 =0.5, y0 = 0.5, dirigido = False, rand_peso = False, rand_style_aristas = False):
+        from random import random
+        peso = 1
+        atipo = 1
+        for i in range(n):
+            tag_nodo = str(i)
+            x = x0 + 0.5*cos(2*pi*i/n)
+            y = y0 + 0.5*sin(2*pi*i/n)
+            size = random()
+            color = random()
+            self.agrega(tag_nodo, size, (x,y),color)
+        for i in range(n):
+            for j in range(k):
+                jj = (i+j+1)%n            
+                self.conecta(str(i),str(jj),peso, dirigido,atipo)
+               
+        for i in range(n-1):
+            for j in range(i+k,n):
+                if random() < prob:
+                    peso = 4
+                    self.conecta(str(i),str(j),peso, dirigido,atipo)
+        
+                
+                      
     def leer(self, filename = "2DU80-05-2.dat"):
         with open(filename, 'r') as archivo:
             nn = int(archivo.readline())
@@ -145,8 +194,7 @@ class Grafo:
         
     def Ford_Fulkerson(self,s,t):
         start_FF = time.perf_counter()
-        if s == t:
-            
+        if s == t: 
             return 0
         maximo = 0
         f = dict()
@@ -171,8 +219,71 @@ class Grafo:
             #print('maximo hasta ahora:',maximo)
             #print('camino',aum)
             #print('f',f)
-        print('time Ford Fulkerson: ', time.perf_counter()-start_FF)
-        return maximo
+        #print('time Ford Fulkerson: ', time.perf_counter()-start_FF)
+        elapsed_FF = time.perf_counter()-start_FF
+        return maximo, elapsed_FF
+    
+    def dfs(self, origen, visitado = None):
+        start_dfs = time.perf_counter()
+        first = False
+        if visitado is None:
+            first = True
+            visitado = set()
+        if origen not in visitado:
+            #print(origen)
+            visitado.add(origen)
+        for siguiente in self.vecinos[origen]-visitado:
+            self.dfs(siguiente,visitado)
+        elapsed_dfs = time.perf_counter()-start_dfs
+        if first: print(elapsed_dfs)
+        return visitado
+    def bfs(self, origen):
+        start_bfs = time.perf_counter()
+        visitado = set()
+        visitado.add(origen)
+        level = set()
+        level.add(origen)
+        nextlevel = set()
+        while len(level)>0:
+            for i in level:
+                for j in self.vecinos[i]:
+                    if j not in visitado:
+                        nextlevel.add(j)
+                        #print(j)
+                        visitado.add(j)
+            level = nextlevel
+            nextlevel = set()
+        elapsed_bfs = time.perf_counter()-start_bfs
+        print(elapsed_bfs)
+        return visitado           
+
+    def avg_dist(self):
+        d, t_fw = self.Floyd_Warshal()
+        s = 0
+        for i in d.keys():
+            s = s+ d[i]
+        a = s/(len(self.nodos)**2)
+        return a
+    def clust_coef(self):
+        delta = dict()
+        for i in self.nodos:
+            m = 0
+            n = len(self.vecinos[i])
+            #print(n)
+            if n <= 2:
+                delta[i]= 0 #seguro que es cero?
+            else:
+                m_max = factorial(n) / (2*factorial(n-2))
+                for j in self.vecinos[i]:
+                    for k in self.vecinos[j]:
+                        if k in self.vecinos[i]:
+                            m = m+1
+                delta[i] = m/m_max
+        s = 0
+        for i in delta.keys():
+            s = s+ delta[i]
+        c = s/len(self.nodos)
+        return c
 
                 
     def gnuplot(self,name = "grafo.png",term = "png", gcolor = False, gtamano = False):
@@ -201,6 +312,7 @@ class Grafo:
             print("unset label", file = archivo)
             print("unset arrow", file = archivo)
             print("unset colorbox", file = archivo)
+            print("set size square", file = archivo)
             for (ii,jj) in self.aristas:
                 (x1, y1) = self.posicion[ii]
                 (x2, y2) = self.posicion[jj]
@@ -211,9 +323,8 @@ class Grafo:
                 if x1>max_x: max_x = x1
                 if x2>max_x: max_x = x2
                 if y1>max_y: max_y = y1
-                if y2>max_y: max_y = y2
-                print("set label '" + str(ii) + "' at ",x1+ axis_border,"," ,y1+0.05, " left offset char -0.4,0", file = archivo) # https://stackoverflow.com/questions/23690551/how-do-you-assign-a-label-when-using-set-object-circle-in-gnuplot
-                print("set label '" + str(jj) + "' at " ,x2+axis_border, "," ,y2+0.05, " left offset char -0.4,0", file = archivo)
+                #print("set label '" + str(ii) + "' at ",x1+ axis_border,"," ,y1+0.05, " left offset char -0.4,0", file = archivo) # https://stackoverflow.com/questions/23690551/how-do-you-assign-a-label-when-using-set-object-circle-in-gnuplot
+                #print("set label '" + str(jj) + "' at " ,x2+axis_border, "," ,y2+0.05, " left offset char -0.4,0", file = archivo)
                 (apeso, atipo, adirected) = self.aristas[(ii,jj)]
                 apeso = apeso*edge_weight
                 head = "nohead"
@@ -244,6 +355,96 @@ class Grafo:
                 print("plot 'nodos.dat' using 1:2 with points pt 7 lc rgb 'blue' notitle", file = archivo)
                 
             archivo.close()
+
+    def gnuplot_flow(self,name = "grafo_flow.png",term = "png", gcolor = False, gtamano = False):
+            n = len(self.nodos)
+            with open("nodos.dat",'w') as archivo_nodos:
+                for nodo in self.nodos:
+                    #nodo = str(i)
+                    (x,y) = self.posicion[nodo]
+                    size = self.tamano[nodo]
+                    color = self.color[nodo]
+                    print(x, y,size,color, file = archivo_nodos)
+            split = name.split(".")
+            filename = split[0] + ".plt"
+            arrow_idx = 1
+            archivo_nodos.close()
+            max_x = 1
+            min_x = 0
+            max_y = 1
+            min_y = 1
+            axis_border = 0.05
+            edge_weight = 0.2
+            with open(filename, 'w') as archivo:
+                print("set term "+term, file = archivo)
+                print("set output '"+name+"'", file = archivo)
+                print("set pointsize 1", file = archivo)
+                print("unset label", file = archivo)
+                print("unset arrow", file = archivo)
+                print("unset colorbox", file = archivo)
+                for (ii,jj) in self.aristas:
+                    (x1, y1) = self.posicion[ii]
+                    (x2, y2) = self.posicion[jj]
+                    if x1<min_x: min_x = x1
+                    if x2<min_x: min_x = x2
+                    if y1<min_y: min_y = y1
+                    if y2<min_y: min_y = y2
+                    if x1>max_x: max_x = x1
+                    if x2>max_x: max_x = x2
+                    if y1>max_y: max_y = y1
+                    if y2>max_y: max_y = y2
+                    print("set label '" + str(ii) + "' at ",x1,"," ,y1, " left offset char -0.4,0", file = archivo) # https://stackoverflow.com/questions/23690551/how-do-you-assign-a-label-when-using-set-object-circle-in-gnuplot
+                    print("set label '" + str(jj) + "' at " ,x2, "," ,y2, " left offset char -0.4,0", file = archivo)
+                    (apeso, atipo, adirected) = self.aristas[(ii,jj)]
+                    apeso = apeso*edge_weight
+                    head = "nohead"
+                    off_arrow = 0.02
+                    if x1<x2:
+                        off_x1 = off_arrow
+                        off_x2 = -off_arrow
+                    else:
+                        off_x1 = -off_arrow
+                        off_x2 = off_arrow
+                    if y1<y2:
+                        off_y1 = off_arrow
+                        off_y2 = -off_arrow
+                    else:
+                        off_y1 = -off_arrow
+                        off_y2 = off_arrow
+                    if adirected:
+                        head = "head"
+                        if (jj,ii) in self.aristas:
+                            if y1<y2:
+                                off_y1 = off_y1 + off_arrow/2
+                                off_y2 = off_y2 + off_arrow/2
+                            else:
+                                off_y1 = off_y1 - off_arrow/2
+                                off_y2 = off_y2 - off_arrow/2
+                    print("set arrow", arrow_idx, "from", x1+off_x1, "," ,y1+off_y1," to ", x2+off_x2, ",", y2+off_y2, head, "filled lw ",apeso, " dashtype ", atipo, file = archivo)
+                    arrow_idx += 1
+                #print("set style fill transparent solid 0.7", file = archivo)
+                min_x = min_x - (max_x-min_x)/10
+                max_x = max_x + (max_x-min_x)/10
+                min_y = min_y - (max_y-min_y)/10
+                max_y = max_y + (max_y-min_y)/10
+                print("set xrange [",min_x,":",max_x,"]", file = archivo)
+                print("set yrange [",min_y,":",max_y,"]", file = archivo)
+                print("set style fill empty", file = archivo)
+                print("set palette defined (0 'blue', 3 'green', 6 'yellow', 10 'red') ", file = archivo)
+                if gcolor and gtamano:
+                    #print("color y tamaño!!")
+                    print("plot 'nodos.dat' using 1:2:(sqrt($3)/30):4 with circles palette notitle", file = archivo)
+                elif gcolor:
+                    #print("sin tamaño!!")
+                    print("plot 'nodos.dat' using 1:2:3 with points pt 7 palette notitle", file = archivo)
+                elif gtamano:
+                    #print("sin color!!")
+                    print("plot 'nodos.dat' using 1:2:(sqrt($3)/30) with circles notitle", file = archivo)
+                else:
+                    #print("sin color sin tamaño!!")
+                    print("plot 'nodos.dat' using 1:2 with circles lc rgb 'blue' notitle", file = archivo)
+                    
+                archivo.close()
 
                         
                     
