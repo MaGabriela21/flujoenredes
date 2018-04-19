@@ -99,7 +99,7 @@ class Grafo:
                     self.conecta(str(i),str(j),peso, dirigido,atipo)
     def kcirc_aleatorio(self, n=10, k = 3,prob = 0.5,x0 =0.5, y0 = 0.5, dirigido = False, rand_peso = False, rand_style_aristas = False):
         from random import random
-        peso = 1
+        peso = 2
         atipo = 1
         for i in range(n):
             tag_nodo = str(i)
@@ -114,13 +114,12 @@ class Grafo:
                 self.conecta(str(i),str(jj),peso, dirigido,atipo)
                
         for i in range(n-1):
-            for j in range(i+k,n):
+            for j in range(n-2*k-1):
+                jj = (i+j+k+1)%n
                 if random() < prob:
                     peso = 4
-                    self.conecta(str(i),str(j),peso, dirigido,atipo)
-        
-                
-                      
+                    self.conecta(str(i),str(jj),peso, dirigido,atipo)
+                   
     def leer(self, filename = "2DU80-05-2.dat"):
         with open(filename, 'r') as archivo:
             nn = int(archivo.readline())
@@ -271,7 +270,7 @@ class Grafo:
             n = len(self.vecinos[i])
             #print(n)
             if n <= 2:
-                delta[i]= 0 #seguro que es cero?
+                delta[i]= 0
             else:
                 m_max = factorial(n) / (2*factorial(n-2))
                 for j in self.vecinos[i]:
@@ -308,7 +307,7 @@ class Grafo:
         with open(filename, 'w') as archivo:
             print("set term "+term, file = archivo)
             print("set output '"+name+"'", file = archivo)
-            print("set pointsize 1", file = archivo)
+            print("set pointsize 2", file = archivo)
             print("unset label", file = archivo)
             print("unset arrow", file = archivo)
             print("unset colorbox", file = archivo)
