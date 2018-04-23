@@ -99,7 +99,7 @@ class Grafo:
                     self.conecta(str(i),str(j),peso, dirigido,atipo)
     def kcirc_aleatorio(self, n=10, k = 3,prob = 0.5,x0 =0.5, y0 = 0.5, dirigido = False, rand_peso = False, rand_style_aristas = False):
         from random import random
-        peso = 2
+        peso = 1
         atipo = 1
         for i in range(n):
             tag_nodo = str(i)
@@ -117,7 +117,7 @@ class Grafo:
             for j in range(n-2*k-1):
                 jj = (i+j+k+1)%n
                 if random() < prob:
-                    peso = 4
+                    peso = 1
                     self.conecta(str(i),str(jj),peso, dirigido,atipo)
                    
     def leer(self, filename = "2DU80-05-2.dat"):
@@ -277,6 +277,7 @@ class Grafo:
                     for k in self.vecinos[j]:
                         if k in self.vecinos[i]:
                             m = m+1
+                m = m/2
                 delta[i] = m/m_max
         s = 0
         for i in delta.keys():
