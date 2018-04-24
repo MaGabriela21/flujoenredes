@@ -25,7 +25,7 @@ class Grafo:
         if not v in self.vecinos:
             self.vecinos[v] = set()
             
-    def conecta(self, v, u, peso=0, dirigido = False, tipo = 1):
+    def conecta(self, u, v,  peso=0, dirigido = False, tipo = 1):
         if not v in self.nodos:
             self.agrega(v)
         if not u in self.nodos:
@@ -40,7 +40,21 @@ class Grafo:
         else:
             self.aristas[(v, u)] = self.aristas[(u, v)] = (peso, tipo, dirigido)  # en ambos sentidos
             self.vecinos[v].add(u)
-        
+    def quitar_arista(self, u,v):
+        p,t,d =self.aristas.pop((u,v))
+        self.vecinos[u].remove(v)
+        if not d:
+            self.vecinos[v].remove(u)
+    def quitar_nodo(self, u):
+        vecindad = self.vecinos[u].copy()
+        for i in vecindad:
+            print("quité arista con",i)
+            self.quitar_arista(u,i)
+        for n in self.nodos:
+            if u in self.vecinos[n]:
+                print("uy quité arista con",n)
+                self.quitar_arista(n,u)
+        self.nodos.remove(u)
     def complemento(self):
         comp= Grafo()
         for v in self.nodos:
@@ -303,6 +317,9 @@ class Grafo:
             #print('f',f)
         #print('time Ford Fulkerson: ', time.perf_counter()-start_FF)
         elapsed_FF = time.perf_counter()-start_FF
+        for i in self.aristas:
+            peso, tipo, dirg = self.aristas[i]
+            self.aristas[i] = (peso,1,dirg)
         for i in f:
             if f[i] > 0:
                 peso, tipo, dirg = self.aristas[i]
