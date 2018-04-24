@@ -138,10 +138,9 @@ class Grafo:
     def manhattan_aleatorio(self, k = 5, l = 1, p = 0.001):
         nodo = 0
         wormholes = 0
-        mu = 1
-        sigma = 0.5
-        peso = 3
-        lmbd = 2
+        mu = 20
+        sigma = 10
+        lmbd = 5
         for i in range(k):
             for j in range(k):  
                 name = str(nodo)
@@ -157,20 +156,24 @@ class Grafo:
         for i in range(k**2-1):
             for j in range(i+1,k**2):
                 if (self.manh_dist(str(i),str(j)) <= l):
-                    lpeso = gauss(mu,sigma)*peso
-                    lpeso = int(lpeso)
-                    print(lpeso)
+                    lpeso = gauss(mu,sigma)
+                    lpeso = abs(int(lpeso))+1
+                    #print(lpeso)
                     self.conecta(str(i),str(j),lpeso,True,1)
                     self.conecta(str(j),str(i),lpeso,True,1)
                 elif (random() < p) :
-                    print(i,',',j)
+                    #print(i,',',j)
                     wormholes = wormholes+1
-                    ppeso = expovariate(lmbd)
+                    ppeso = expovariate(lmbd)*mu/4
+                    ppeso = abs(int(ppeso))+1
+                    #print("pp: ",ppeso)
                     self.conecta(str(i),str(j),ppeso,True,2)
                 elif (random() < p) :
-                    print(j,',',i)
+                    #print(j,',',i)
                     wormholes = wormholes+1
-                    ppeso = expovariate(lmbd)
+                    ppeso = expovariate(lmbd)*mu/4
+                    ppeso = abs(int(ppeso))+1
+                    #print("pp: ",ppeso)
                     self.conecta(str(j),str(i),ppeso,True,2)
         print('wormholes: ',wormholes)
 
@@ -235,10 +238,7 @@ class Grafo:
         x1, y1 = self.posicion[a]
         x2, y2 = self.posicion[b]
         md = abs(x1-x2) + abs(y2-y1) 
-
         return md
-        
-            
     def Floyd_Warshal(self):
         #start_FW = time.time()
         start_FW = time.perf_counter()
@@ -567,7 +567,7 @@ class Grafo:
         max_y = 5
         min_y = 0
         axis_border = 0.05
-        edge_weight = 0.5
+        edge_weight = 0.2
         with open(filename, 'w') as archivo:
             print("set term "+term, file = archivo)
             print("set output '"+name+"'", file = archivo)
@@ -593,11 +593,18 @@ class Grafo:
                 head = "nohead"
                 if adirected:
                     head = "head"
+                '''    
                 if atipo > 2:
                     color = " 'red' "
                 else:
                     color = " 'black' "
                 print("set arrow", arrow_idx, "from", x1, "," ,y1,\
+                      " to ", x2, ",", y2, head, "filled lw ",apeso,\
+                      "lc rgb ", color, file = archivo)
+                '''
+                if atipo > 2 :
+                    color = " 'red' "
+                    print("set arrow", arrow_idx, "from", x1, "," ,y1,\
                       " to ", x2, ",", y2, head, "filled lw ",apeso,\
                       "lc rgb ", color, file = archivo)
                 arrow_idx += 1
