@@ -48,11 +48,11 @@ class Grafo:
     def quitar_nodo(self, u):
         vecindad = self.vecinos[u].copy()
         for i in vecindad:
-            print("quité arista con",i)
+            #print("quité arista con",i)
             self.quitar_arista(u,i)
         for n in self.nodos:
             if u in self.vecinos[n]:
-                print("uy quité arista con",n)
+                #print("uy quité arista con",n)
                 self.quitar_arista(n,u)
         self.nodos.remove(u)
     def complemento(self):

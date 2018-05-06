@@ -64,42 +64,70 @@ g.gnuplot_mh("9manhattan.png","png", True, True)
 
 
 g = Grafo()
-k = 5
-p = 0.001
-mf = dict()
-mf_time = dict()
+k = 30
+l = 3
+p = 0.0001
+repetitions = 2
+quitados = 5
+#mf = dict() #maximum flow
+#mf_time = dict()
 acut = dict()
 a = (k**2)*(k**2-1)
+'''
 for i in range(a):
     mf[i] = set()
     mf_time[i] = set()
-for i in range(10):
-    g.manhattan_aleatorio(k,1,p)
-    m, time = g.Ford_Fulkerson('0',str((k)**2-1))
-    mf[0].add(m)
-    mf_time[0].add(time)
-    j = 1
-    while m > 0 :
-        found = False
-        while not found:
-            u = randint(0,(k)**2-1)
-            u = str(u)
-            if len(g.vecinos[u])>0:
-                found = True
-        v = sample(g.vecinos[u],1)[0]
-        g.quitar_arista(u,v)
-        #print("j = ",j,"quité",u,", ",v)
+'''
+for i in range(repetitions):
+    ii = i
+    #filename = "results-k"+str(k)+"-l"+str(l)+"-p"+str(p)+"-q"+str(quitados)+".txt"
+    filename = str(i)+"results-k"+str(k)+"-l"+str(l)+"-p"+str(p)+".txt"
+    with open(filename, 'w') as results:
+        g.manhattan_aleatorio(k,l,p)
         m, time = g.Ford_Fulkerson('0',str((k)**2-1))
-        mf[j].add(m)
-        mf_time[j].add(time)
-        j = j+1
-    acut[i] = j
-    #print("aristas que quité: ",j)
-        
+        init_m = m #initial maxflow
+        #mf[0].add(m)
+        #mf_time[0].add(time)
+        print(0," ",1," ",time, file = results)
+        j = 1
+        while m >0 : ##FF da resultados menor a uno por alguna razón... 
+            for q in range(quitados):
+                '''
+                found = False #if an existing edge was found
+                while not found:
+                    u = randint(0,(k)**2-1)
+                    u = str(u)
+                    if len(g.vecinos[u])>0:
+                        found = True
+                v = sample(g.vecinos[u],1)[0]
+                g.quitar_arista(u,v)
+                '''
+                u = sample(g.nodos,1)[0]
+                u = str(u)
+                g.quitar_nodo(u)
+            #print("j = ",j,"quité",u,", ",v)
+            m, time = g.Ford_Fulkerson('0',str((k)**2-1))
+            m = m/init_m 
+            #mf[j].add(m)
+            #mf_time[j].add(time)
+            print(j*quitados," ",m," ",time, file = results)
+            j = j+1
+    acut[i] = j-1
+    results.close()
+    print("maxflow:",init_m)
+        #print("aristas que quité: ",j)
+
 g.gnuplot_mh("manhattan.png","png", True, True)
 g.gnuplot("1manhattan.png","png", True, True)
 
+
 #Results!!
+for i in range(repetitions):
+        print(acut[i])
+filename = "k"+str(k)+"-l"+str(l)+"-p"+str(p)+".dat"
+with open(filename, 'w') as resultsf:
+    for i in range(repetitions):
+        print(acut[i], file = resultsf)
 
 
 
