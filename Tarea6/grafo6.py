@@ -414,7 +414,7 @@ class Grafo:
         while not found:
             a = sample(self.nodos,1)[0]
             b = sample(self.vecinos[a],1)[0]
-            if abs(self.status[a]-self.status[b]) > 1 :
+            if (abs(self.status[a]-self.status[b]) != 1):
                 found = True
         newnode = a+"#"+b
         (x1, y1) = self.posicion[a]
